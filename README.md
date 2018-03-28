@@ -1,4 +1,4 @@
-# A plugin-based HTTP router
+# A plugin-based HTTP proxy in Python
 ```
 usage: httpvec [-h] [-d] [-V] [-v]
                [-i [INSPECTOR_PATHS [INSPECTOR_PATHS ...]]]
@@ -44,6 +44,6 @@ choice can be made, it returns `None`.
 ## Example inspectors
 |Name    |Description|
 |--------|-----------|
-|[samples/host_header.py]|Compares the HTTP `Host` header to the vector host|
+|[host_header](httpvec/samples/host_header.py)|Compares the HTTP `Host` header to the vector host|
 
 
