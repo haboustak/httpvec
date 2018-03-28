@@ -1,0 +1,14 @@
+[MESSAGES CONTROL]
+
+## Complaints I judge irrelevant
+##    docstrings disabled temporarily
+disable=locally-disabled,too-few-public-methods,missing-docstring,bare-except
+
+[BASIC]
+
+## I refuse to use ind, err, and fobj instead of i, e, and f
+variable-rgx=[a-z_][a-z0-9_]{0,30}$
+
+## Some two letter arguments are totally reasonable (db)
+argument-rgx=[a-z_][a-z0-9_]{1,30}$
+
