@@ -63,19 +63,20 @@ class VectoringHttpHandler(BaseHTTPRequestHandler, object):
                 choice = inspector.select(self.headers, self.vectors)
             except:
                 log.error("inspector %s failed", inspector.__name__)
+                log.debug(traceback.format_exc())
 
             if choice:
                 log.info(
                     "Inspector \"%s\" chose vector %s",
                     inspector.__name__,
-                    choice[1]
+                    choice['.host']
                     )
                 break
         if not choice:
             log.info("No vector chosen, hanging up")
             return
 
-        scheme, host = choice if choice else self.vectors[1]
+        scheme, host = (choice['.scheme'], choice['.host'])
         conn = self.connectors[scheme](
             host,
             timeout=self.timeout
@@ -125,25 +126,35 @@ def find_inspectors(paths):
 
     return inspectors
 
+def load_module(filename):
+    relpath = shorten_path(filename)
+    module = os.path.basename(filename.strip('.py'))
+    try:
+        plugin = imp.load_source(module, filename)
+        if 'select' in dir(plugin):
+            log.info("Loading inspector: %s", relpath)
+            return plugin
+    except TypeError:
+        log.debug(
+            "Ignoring module that failed to load: %s",
+            relpath)
+    except:
+        log.error("Failed to load inspector: %s", relpath)
+        log.debug(traceback.format_exc())
+
+    return None
+
 def load_inspectors(path):
     inspectors = []
     pattern = os.path.join(path, "*.py")
     log.info("Searching %s for inspectors", shorten_path(pattern))
 
-    for filename in glob.glob(pattern):
-        relpath = shorten_path(filename)
-        module = os.path.basename(filename.strip('.py'))
-        try:
-            plugin = imp.load_source(module, filename)
-            if 'select' in dir(plugin):
-                inspectors.append(plugin)
-                log.info("Loading inspector: %s", relpath)
-        except TypeError:
-            log.debug(
-                "Ignoring module that failed to load: %s",
-                relpath)
-        except:
-            log.error("Failed to load inspector: %s", relpath)
+    files = [path] if os.path.isfile(path) else glob.glob(pattern)
+
+    for filename in files:
+        module = load_module(filename)
+        if module:
+            inspectors.append(module)
 
     return inspectors
 
@@ -151,26 +162,22 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog='httpvec',
         description='Plugin-based HTTP Proxy')
-
-    parser.add_argument(
-        '-d', '--debug',
-        action="store_true",
-        help="show detailed debug information")
-    parser.add_argument(
-        '-V', '--verbose',
-        action="store_true",
-        help="show additional information")
     parser.add_argument(
         '-v', '--version',
         action='version',
         version='%(prog)s v'+__version__)
 
     parser.add_argument(
+        '-V', '--verbose',
+        action="store_true",
+        help="show additional information")
+
+    parser.add_argument(
         '-i', '--inspectors',
         dest="inspector_paths",
         nargs="*",
         action=ResolvePath,
-        help="path to directory that contains inspector modules")
+        help="path to inspector module or a directory that contains inspector modules")
 
     parser.add_argument(
         '-p', '--port',
@@ -192,10 +199,8 @@ def parse_args():
 
     args = parser.parse_args()
 
-    if args.debug:
+    if args.verbose:
         log.setLevel(logging.DEBUG)
-    elif args.verbose:
-        log.setLevel(logging.INFO)
 
     return args
 
@@ -205,15 +210,24 @@ def run_proxy():
     vectors = []
     with open(args.VECTORS, 'rt') as f:
         config = yaml.load(f)
-        for url in config:
-            url_parts = urlparse.urlsplit(url)
-            scheme = url_parts[0].lower()
-            host = url_parts[1]
-            if not scheme in ['http', 'https']:
+        for vector in config:
+            if not 'url' in vector:
+                continue
+
+            url_parts = urlparse.urlsplit(vector['url'])
+            vector['.scheme'] = url_parts.scheme.lower()
+            vector['.host'] = url_parts.netloc
+            vector['.port'] = url_parts.port
+            vector['.path'] = url_parts.path
+            vector['.query'] = url_parts.query
+            vector['.fragment'] = url_parts.fragment
+
+            if vector['.scheme'] not in ['http', 'https']:
                 raise Exception(
-                    "Url must be http:// or https://"
-                    )
-            vectors.append((scheme, host,))
+                    "Url {} must start with http:// or https://".format(
+                        vector['url']
+                        ))
+            vectors.append(vector)
     inspectors = find_inspectors(args.inspector_paths)
 
     handler = inspect(vectors).using(inspectors)
@@ -228,17 +242,16 @@ def run_proxy():
 def main():
     logging.basicConfig(
         stream=sys.stderr,
-        level=logging.DEBUG,
+        level=logging.INFO,
         format='%(levelname)s: %(message)s')
 
     try:
         run_proxy()
     except KeyboardInterrupt:
-        pass
-    except:
-        log.error(sys.exc_info()[1])
-        if log.level == logging.DEBUG:
-            traceback.print_exc()
+        return 1
+    except Exception as e:
+        log.error(e)
+        log.debug(traceback.format_exc())
 
         return 1
 
