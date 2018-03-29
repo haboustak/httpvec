@@ -1,11 +1,13 @@
 # A plugin-based HTTP proxy in Python
 ```
 usage: httpvec [-h] [-d] [-V] [-v]
-               [-i [INSPECTOR_PATHS [INSPECTOR_PATHS ...]]]
+               [-i [INSPECTOR_PATHS [INSPECTOR_PATHS ...]]] [-p PORT]
+               [-H HOST]
                VECTORS
 
 Plugin-based HTTP Proxy
 
+positional arguments:
   VECTORS               YAML file with the list of vectors
 
 optional arguments:
@@ -13,7 +15,10 @@ optional arguments:
   -d, --debug           show detailed debug information
   -V, --verbose         show additional information
   -v, --version         show program's version number and exit
-  -i , --inspectors     path to directory that contains inspector modules
+  -i , --inspectors     path to inspector module or a directory that contains
+                        inspector modules
+  -p PORT, --port PORT  port used to listen for incoming requests
+  -H HOST, --host HOST  IP or hostname used to listen for incoming requests
 ```
 
 ## Using HTTPVEC

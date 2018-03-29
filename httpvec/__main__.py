@@ -126,26 +126,35 @@ def find_inspectors(paths):
 
     return inspectors
 
+def load_module(filename):
+    relpath = shorten_path(filename)
+    module = os.path.basename(filename.strip('.py'))
+    try:
+        plugin = imp.load_source(module, filename)
+        if 'select' in dir(plugin):
+            log.info("Loading inspector: %s", relpath)
+            return plugin
+    except TypeError:
+        log.debug(
+            "Ignoring module that failed to load: %s",
+            relpath)
+    except:
+        log.error("Failed to load inspector: %s", relpath)
+        log.debug(traceback.format_exc())
+
+    return None
+
 def load_inspectors(path):
     inspectors = []
     pattern = os.path.join(path, "*.py")
     log.info("Searching %s for inspectors", shorten_path(pattern))
 
-    for filename in glob.glob(pattern):
-        relpath = shorten_path(filename)
-        module = os.path.basename(filename.strip('.py'))
-        try:
-            plugin = imp.load_source(module, filename)
-            if 'select' in dir(plugin):
-                inspectors.append(plugin)
-                log.info("Loading inspector: %s", relpath)
-        except TypeError:
-            log.debug(
-                "Ignoring module that failed to load: %s",
-                relpath)
-        except:
-            log.error("Failed to load inspector: %s", relpath)
-            log.debug(traceback.format_exc())
+    files = [path] if os.path.isfile(path) else glob.glob(pattern)
+
+    for filename in files:
+        module = load_module(filename)
+        if module:
+            inspectors.append(module)
 
     return inspectors
 
@@ -172,7 +181,7 @@ def parse_args():
         dest="inspector_paths",
         nargs="*",
         action=ResolvePath,
-        help="path to directory that contains inspector modules")
+        help="path to inspector module or a directory that contains inspector modules")
 
     parser.add_argument(
         '-p', '--port',
