@@ -63,19 +63,20 @@ class VectoringHttpHandler(BaseHTTPRequestHandler, object):
                 choice = inspector.select(self.headers, self.vectors)
             except:
                 log.error("inspector %s failed", inspector.__name__)
+                log.debug(traceback.format_exc())
 
             if choice:
                 log.info(
                     "Inspector \"%s\" chose vector %s",
                     inspector.__name__,
-                    choice[1]
+                    choice['.host']
                     )
                 break
         if not choice:
             log.info("No vector chosen, hanging up")
             return
 
-        scheme, host = choice if choice else self.vectors[1]
+        scheme, host = (choice['.scheme'], choice['.host'])
         conn = self.connectors[scheme](
             host,
             timeout=self.timeout
@@ -144,6 +145,7 @@ def load_inspectors(path):
                 relpath)
         except:
             log.error("Failed to load inspector: %s", relpath)
+            log.debug(traceback.format_exc())
 
     return inspectors
 
@@ -192,6 +194,7 @@ def parse_args():
 
     args = parser.parse_args()
 
+    log.setLevel(logging.WARN)
     if args.debug:
         log.setLevel(logging.DEBUG)
     elif args.verbose:
@@ -205,15 +208,24 @@ def run_proxy():
     vectors = []
     with open(args.VECTORS, 'rt') as f:
         config = yaml.load(f)
-        for url in config:
-            url_parts = urlparse.urlsplit(url)
-            scheme = url_parts[0].lower()
-            host = url_parts[1]
-            if not scheme in ['http', 'https']:
+        for vector in config:
+            if not 'url' in vector:
+                continue
+
+            url_parts = urlparse.urlsplit(vector['url'])
+            vector['.scheme'] = url_parts.scheme.lower()
+            vector['.host'] = url_parts.netloc
+            vector['.port'] = url_parts.port
+            vector['.path'] = url_parts.path
+            vector['.query'] = url_parts.query
+            vector['.fragment'] = url_parts.fragment
+
+            if vector['.scheme'] not in ['http', 'https']:
                 raise Exception(
-                    "Url must be http:// or https://"
-                    )
-            vectors.append((scheme, host,))
+                    "Url {} must start with http:// or https://".format(
+                        vector['url']
+                        ))
+            vectors.append(vector)
     inspectors = find_inspectors(args.inspector_paths)
 
     handler = inspect(vectors).using(inspectors)
@@ -237,8 +249,7 @@ def main():
         pass
     except:
         log.error(sys.exc_info()[1])
-        if log.level == logging.DEBUG:
-            traceback.print_exc()
+        log.debug(traceback.format_exc())
 
         return 1
 

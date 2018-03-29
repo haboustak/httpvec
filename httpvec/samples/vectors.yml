@@ -1,0 +1,13 @@
+- {
+    'url': 'https://httpbin.org/',
+    'type': 'prod',
+  }
+- {
+    'url': 'http://www.google.com/',
+    'type': 'prod',
+  }
+- {
+    'url': 'https://yahoo.local:5000/',
+    'type': 'test',
+  }
+
