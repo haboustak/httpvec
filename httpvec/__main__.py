@@ -162,19 +162,15 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog='httpvec',
         description='Plugin-based HTTP Proxy')
-
-    parser.add_argument(
-        '-d', '--debug',
-        action="store_true",
-        help="show detailed debug information")
-    parser.add_argument(
-        '-V', '--verbose',
-        action="store_true",
-        help="show additional information")
     parser.add_argument(
         '-v', '--version',
         action='version',
         version='%(prog)s v'+__version__)
+
+    parser.add_argument(
+        '-V', '--verbose',
+        action="store_true",
+        help="show additional information")
 
     parser.add_argument(
         '-i', '--inspectors',
@@ -203,11 +199,8 @@ def parse_args():
 
     args = parser.parse_args()
 
-    log.setLevel(logging.WARN)
-    if args.debug:
+    if args.verbose:
         log.setLevel(logging.DEBUG)
-    elif args.verbose:
-        log.setLevel(logging.INFO)
 
     return args
 
@@ -249,15 +242,15 @@ def run_proxy():
 def main():
     logging.basicConfig(
         stream=sys.stderr,
-        level=logging.DEBUG,
+        level=logging.INFO,
         format='%(levelname)s: %(message)s')
 
     try:
         run_proxy()
     except KeyboardInterrupt:
-        pass
-    except:
-        log.error(sys.exc_info()[1])
+        return 1
+    except Exception as e:
+        log.error(e)
         log.debug(traceback.format_exc())
 
         return 1

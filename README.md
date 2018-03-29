@@ -1,8 +1,7 @@
 # A plugin-based HTTP proxy in Python
 ```
-usage: httpvec [-h] [-d] [-V] [-v]
-               [-i [INSPECTOR_PATHS [INSPECTOR_PATHS ...]]] [-p PORT]
-               [-H HOST]
+usage: httpvec [-h] [-V] [-v] [-i [INSPECTOR_PATHS [INSPECTOR_PATHS ...]]]
+               [-p PORT] [-H HOST]
                VECTORS
 
 Plugin-based HTTP Proxy
@@ -12,9 +11,8 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -d, --debug           show detailed debug information
-  -V, --verbose         show additional information
   -v, --version         show program's version number and exit
+  -V, --verbose         show additional information
   -i , --inspectors     path to inspector module or a directory that contains
                         inspector modules
   -p PORT, --port PORT  port used to listen for incoming requests

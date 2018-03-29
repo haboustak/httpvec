@@ -2,7 +2,7 @@
 
 ## Complaints I judge irrelevant
 ##    docstrings disabled temporarily
-disable=locally-disabled,too-few-public-methods,missing-docstring,bare-except
+disable=locally-disabled,too-few-public-methods,missing-docstring,bare-except,broad-except
 
 [BASIC]
 
