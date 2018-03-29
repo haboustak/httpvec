@@ -173,6 +173,19 @@ def parse_args():
         help="path to directory that contains inspector modules")
 
     parser.add_argument(
+        '-p', '--port',
+        dest='port',
+        action='store',
+        type=int,
+        default='8080',
+        help='port used to listen for incoming requests')
+    parser.add_argument(
+        '-H', '--host',
+        dest='host',
+        action='store',
+        default='localhost',
+        help='IP or hostname used to listen for incoming requests')
+    parser.add_argument(
         'VECTORS',
         action=ResolvePath,
         help="YAML file with the list of vectors")
@@ -203,23 +216,19 @@ def run_proxy():
             vectors.append((scheme, host,))
     inspectors = find_inspectors(args.inspector_paths)
 
-    try:
-        port = int(sys.argv[1])
-    except:
-        port = 8080
-    server_address = ('localhost', port)
-
     handler = inspect(vectors).using(inspectors)
-    httpd = ForkingHttpServer(server_address, handler)
+    proxy = ForkingHttpServer(
+        (args.host, args.port),
+        handler)
 
-    sa = httpd.socket.getsockname()
-    log.info("Serving HTTP Proxy on %s:%s...", sa[0], sa[1])
-    httpd.serve_forever()
+    sockname = proxy.socket.getsockname()
+    log.info("Listening for HTTP requests on %s:%s...", *sockname)
+    proxy.serve_forever()
 
 def main():
     logging.basicConfig(
         stream=sys.stderr,
-        level=logging.WARN,
+        level=logging.DEBUG,
         format='%(levelname)s: %(message)s')
 
     try:
