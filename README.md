@@ -78,6 +78,9 @@ provided.
 
 |Name    |Description|
 |--------|-----------|
-|[host_header](httpvec/samples/host_header.py)|Compares the HTTP `Host` header to the vector host|
+|[host](httpvec/samples/host.py)|Compares the HTTP `Host` header to the vector host|
+|[chaos](httpvec/samples/chaos.py)|Chooses a random vector|
+|[chill](httpvec/samples/chill.py)|Always takes the first vector|
+|[null](httpvec/samples/null.py)|Never chooses a vector|
 
 
