@@ -93,7 +93,7 @@ class VectoringHttpHandler(BaseHTTPRequestHandler, object):
         self.wfile.write("HTTP/1.1 %d %s\r\n" % (res.status, res.reason))
 
         for key in res.msg:
-            self.wfile.write("{}={}\r\n".format(key, res.msg[key]))
+            self.wfile.write("{}: {}\r\n".format(key, res.msg[key]))
 
         self.end_headers()
         self.wfile.write(res.read())

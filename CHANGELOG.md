@@ -1,3 +1,6 @@
+#### v0.2.1
+- Fix HTTP header generation
+
 #### v0.2
 - Add `--port` and `--host` command-line arguments
 - Use a dictionary to store vector configuration
